@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Injection Tracker</title>
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>Injection Tracker</h1>
+      <p class="subtitle">Gjurmo krahun ku behet injeksioni çdo ditë</p>
+    </header>
+
+    <div class="date-card">
+      <button id="prevDay" class="nav-btn" aria-label="Dita e mëparshme">&#8249;</button>
+
+      <label class="date-pill" for="datePicker">
+        <span id="dateLabel">—</span>
+        <input type="date" id="datePicker" class="hidden-date-input" />
+      </label>
+
+      <button id="nextDay" class="nav-btn" aria-label="Dita tjetër">&#8250;</button>
+      <button id="todayBtn" class="today-btn">Sot</button>
+    </div>
+
+    <div class="status-card" id="statusCard"></div>
+
+    <div class="injection-card">
+      <div class="arm-visual" id="armVisual">
+        <img id="armImage" src="assets/left.png" alt="Krahu i injeksionit" />
+      </div>
+      <div class="arm-label" id="armLabel">E MAJTË</div>
+      <p class="hint">Kliko mbi imazhin për të ndryshuar krahun</p>
+
+      <div class="form-row">
+        <label for="timeInput">Ora</label>
+        <input type="time" id="timeInput" />
+      </div>
+      <div class="form-row">
+        <label for="notesInput">Shënime</label>
+        <textarea id="notesInput" rows="3" placeholder="Shënime opsionale..."></textarea>
+      </div>
+
+      <button id="submitBtn" class="submit-btn">Ruaj Injeksionin</button>
+      <p class="save-msg" id="saveMsg"></p>
+    </div>
+  </div>
+
+  <script src="index.js"></script>
+</body>
+</html>
