@@ -1,5 +1,5 @@
 // Minimal offline app-shell cache so the installed app opens without a network hit.
-const CACHE_NAME = "injection-tracker-v1";
+const CACHE_NAME = "injection-tracker-v2";
 const ASSETS = [
   "./index.html",
   "./index.css",
@@ -7,6 +7,7 @@ const ASSETS = [
   "./manifest.json",
   "./assets/left.png",
   "./assets/right.png",
+  "./assets/icon.jpg",
 ];
 
 self.addEventListener("install", (event) => {
