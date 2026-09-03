@@ -36,6 +36,8 @@
     <div class="status-card" id="statusCard"></div>
 
     <div class="injection-card">
+      <button id="deleteBtn" class="delete-btn hidden" aria-label="Fshi injeksionin" title="Fshi injeksionin">&#128465;</button>
+
       <div class="arm-visual" id="armVisual">
         <img id="armImage" src="assets/left.png" alt="Krahu i injeksionit" />
       </div>
@@ -51,9 +53,22 @@
         <textarea id="notesInput" rows="3" placeholder="Shënime opsionale..."></textarea>
       </div>
 
-      <button id="editBtn" class="edit-btn">Edito</button>
+      <div class="action-row">
+        <button id="editBtn" class="edit-btn">Edito</button>
+      </div>
       <button id="submitBtn" class="submit-btn">Ruaj Injeksionin</button>
       <p class="save-msg" id="saveMsg"></p>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="confirmOverlay">
+    <div class="modal-box">
+      <h2>Fshi injeksionin?</h2>
+      <p>Ky veprim do të fshijë përgjithmonë regjistrimin e injeksionit për këtë ditë. Nuk mund të kthehet mbrapa.</p>
+      <div class="modal-actions">
+        <button id="cancelDeleteBtn" class="modal-cancel-btn">Anulo</button>
+        <button id="confirmDeleteBtn" class="modal-confirm-btn">Fshi</button>
+      </div>
     </div>
   </div>
 

@@ -39,6 +39,16 @@ async function getAllInjections() {
   });
 }
 
+async function deleteInjection(date) {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    tx.objectStore(STORE_NAME).delete(date);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
 // ---- Date helpers -----------------------------------------------------------
 function toDateStr(d) {
   const y = d.getFullYear();
@@ -114,7 +124,11 @@ const timeInputEl = document.getElementById("timeInput");
 const notesInputEl = document.getElementById("notesInput");
 const submitBtnEl = document.getElementById("submitBtn");
 const editBtnEl = document.getElementById("editBtn");
+const deleteBtnEl = document.getElementById("deleteBtn");
 const saveMsgEl = document.getElementById("saveMsg");
+const confirmOverlayEl = document.getElementById("confirmOverlay");
+const cancelDeleteBtnEl = document.getElementById("cancelDeleteBtn");
+const confirmDeleteBtnEl = document.getElementById("confirmDeleteBtn");
 
 function setArm(side) {
   currentSide = side;
@@ -129,6 +143,7 @@ function setLocked(locked) {
   armVisualEl.classList.toggle("locked", locked);
   submitBtnEl.classList.toggle("hidden", locked);
   editBtnEl.classList.toggle("hidden", !locked);
+  deleteBtnEl.classList.toggle("hidden", !locked);
 }
 
 function render() {
@@ -206,6 +221,27 @@ armVisualEl.addEventListener("click", () => {
 editBtnEl.addEventListener("click", () => {
   isEditing = true;
   render();
+});
+
+deleteBtnEl.addEventListener("click", () => {
+  confirmOverlayEl.classList.remove("hidden");
+});
+
+cancelDeleteBtnEl.addEventListener("click", () => {
+  confirmOverlayEl.classList.add("hidden");
+});
+
+confirmOverlayEl.addEventListener("click", (e) => {
+  if (e.target === confirmOverlayEl) confirmOverlayEl.classList.add("hidden");
+});
+
+confirmDeleteBtnEl.addEventListener("click", async () => {
+  await deleteInjection(selectedDateStr);
+  allRecords = await getAllInjections();
+  isEditing = false;
+  confirmOverlayEl.classList.add("hidden");
+  render();
+  saveMsgEl.textContent = "Injeksioni u fshi.";
 });
 
 submitBtnEl.addEventListener("click", async () => {
