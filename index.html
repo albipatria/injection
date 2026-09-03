@@ -2,9 +2,17 @@
 <html lang="sq">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Injection Tracker</title>
   <link rel="stylesheet" href="index.css" />
+
+  <!-- PWA / iOS home screen app support -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1d4ed8" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Injections" />
+  <link rel="apple-touch-icon" href="assets/right.png" />
 </head>
 <body>
   <div class="app">
@@ -43,6 +51,7 @@
         <textarea id="notesInput" rows="3" placeholder="Shënime opsionale..."></textarea>
       </div>
 
+      <button id="editBtn" class="edit-btn">Edito</button>
       <button id="submitBtn" class="submit-btn">Ruaj Injeksionin</button>
       <p class="save-msg" id="saveMsg"></p>
     </div>

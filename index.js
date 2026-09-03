@@ -101,6 +101,7 @@ const sideImages = { left: "assets/left.png", right: "assets/right.png" };
 let selectedDateStr = toDateStr(new Date());
 let currentSide = "left";
 let allRecords = [];
+let isEditing = false; // true once the user explicitly unlocks an already-logged day
 
 // ---- DOM refs -------------------------------------------------------------
 const dateLabelEl = document.getElementById("dateLabel");
@@ -112,6 +113,7 @@ const armLabelEl = document.getElementById("armLabel");
 const timeInputEl = document.getElementById("timeInput");
 const notesInputEl = document.getElementById("notesInput");
 const submitBtnEl = document.getElementById("submitBtn");
+const editBtnEl = document.getElementById("editBtn");
 const saveMsgEl = document.getElementById("saveMsg");
 
 function setArm(side) {
@@ -119,6 +121,14 @@ function setArm(side) {
   armImageEl.src = sideImages[side];
   armImageEl.alt = `Krahu ${sideNames[side]}`;
   armLabelEl.textContent = sideNames[side];
+}
+
+function setLocked(locked) {
+  timeInputEl.disabled = locked;
+  notesInputEl.disabled = locked;
+  armVisualEl.classList.toggle("locked", locked);
+  submitBtnEl.classList.toggle("hidden", locked);
+  editBtnEl.classList.toggle("hidden", !locked);
 }
 
 function render() {
@@ -134,10 +144,11 @@ function render() {
   if (recommendation.source === "logged") {
     const r = recommendation.record;
     statusCardEl.classList.add("logged");
-    statusCardEl.innerHTML = `✅ Injeksioni për këtë ditë u regjistrua në krahun <strong>${sideNames[r.side]}</strong> në orën <strong>${r.time}</strong>.${r.notes ? `<br>Shënime: ${escapeHtml(r.notes)}` : ""}`;
+    statusCardEl.innerHTML = `✅ Injeksioni për këtë ditë u regjistrua në krahun <strong>${sideNames[r.side]}</strong> në orën <strong>${r.time}</strong>.${r.notes ? `<br>Shënime: ${escapeHtml(r.notes)}` : ""}${isEditing ? "<br><em>Në modë editimi...</em>" : ""}`;
     timeInputEl.value = r.time;
     notesInputEl.value = r.notes || "";
     submitBtnEl.textContent = "Përditëso Injeksionin";
+    setLocked(!isEditing);
   } else if (recommendation.source === "recommended") {
     const b = recommendation.basedOn;
     statusCardEl.classList.add("recommended");
@@ -145,12 +156,14 @@ function render() {
     timeInputEl.value = currentTimeStr();
     notesInputEl.value = "";
     submitBtnEl.textContent = "Ruaj Injeksionin";
+    setLocked(false);
   } else {
     statusCardEl.classList.add("default");
     statusCardEl.textContent = "Nuk ka rekorde të mëparshme. Zgjidh krahun për injeksionin e parë.";
     timeInputEl.value = currentTimeStr();
     notesInputEl.value = "";
     submitBtnEl.textContent = "Ruaj Injeksionin";
+    setLocked(false);
   }
 }
 
@@ -164,6 +177,7 @@ function changeDateByDays(delta) {
   const d = parseDateStr(selectedDateStr);
   d.setDate(d.getDate() + delta);
   selectedDateStr = toDateStr(d);
+  isEditing = false;
   render();
 }
 
@@ -172,18 +186,26 @@ document.getElementById("prevDay").addEventListener("click", () => changeDateByD
 document.getElementById("nextDay").addEventListener("click", () => changeDateByDays(1));
 document.getElementById("todayBtn").addEventListener("click", () => {
   selectedDateStr = toDateStr(new Date());
+  isEditing = false;
   render();
 });
 
 datePickerEl.addEventListener("change", () => {
   if (datePickerEl.value) {
     selectedDateStr = datePickerEl.value;
+    isEditing = false;
     render();
   }
 });
 
 armVisualEl.addEventListener("click", () => {
+  if (armVisualEl.classList.contains("locked")) return;
   setArm(opposite(currentSide));
+});
+
+editBtnEl.addEventListener("click", () => {
+  isEditing = true;
+  render();
 });
 
 submitBtnEl.addEventListener("click", async () => {
@@ -196,6 +218,7 @@ submitBtnEl.addEventListener("click", async () => {
   };
   await saveInjection(record);
   allRecords = await getAllInjections();
+  isEditing = false;
   render();
   saveMsgEl.textContent = "Ruajtur me sukses!";
 });
@@ -204,4 +227,8 @@ submitBtnEl.addEventListener("click", async () => {
 (async function init() {
   allRecords = await getAllInjections();
   render();
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
 })();
