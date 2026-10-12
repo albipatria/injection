@@ -259,6 +259,184 @@ submitBtnEl.addEventListener("click", async () => {
   saveMsgEl.textContent = "Ruajtur me sukses!";
 });
 
+// ---- Import / export ----------------------------------------------------------
+const CSV_COLUMNS = ["date", "time", "side", "notes"];
+
+const importBtnEl = document.getElementById("importBtn");
+const importInputEl = document.getElementById("importInput");
+const menuBtnEl = document.getElementById("menuBtn");
+const dataMenuEl = document.getElementById("dataMenu");
+const toolbarMsgEl = document.getElementById("toolbarMsg");
+
+let toolbarMsgTimer = null;
+function showToolbarMsg(text, isError = false) {
+  toolbarMsgEl.textContent = text;
+  toolbarMsgEl.classList.toggle("error", isError);
+  clearTimeout(toolbarMsgTimer);
+  toolbarMsgTimer = setTimeout(() => { toolbarMsgEl.textContent = ""; }, 5000);
+}
+
+function closeDataMenu() {
+  dataMenuEl.classList.add("hidden");
+  menuBtnEl.setAttribute("aria-expanded", "false");
+}
+
+function toCsv(records) {
+  const esc = (v) => {
+    const s = String(v ?? "");
+    return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [CSV_COLUMNS.join(",")];
+  for (const r of records) lines.push(CSV_COLUMNS.map((c) => esc(r[c])).join(","));
+  return lines.join("\r\n");
+}
+
+// RFC 4180 style parser: handles quoted fields, escaped quotes and newlines inside quotes.
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += ch;
+    } else if (ch === '"') inQuotes = true;
+    else if (ch === ",") { row.push(field); field = ""; }
+    else if (ch === "\n" || ch === "\r") {
+      if (ch === "\r" && text[i + 1] === "\n") i++;
+      row.push(field); field = "";
+      rows.push(row); row = [];
+    } else field += ch;
+  }
+  if (field !== "" || row.length) { row.push(field); rows.push(row); }
+  return rows.filter((r) => r.some((c) => c.trim() !== ""));
+}
+
+function recordsFromCsv(text) {
+  const rows = parseCsv(text.replace(/^\uFEFF/, ""));
+  if (!rows.length) return [];
+  const header = rows[0].map((h) => h.trim().toLowerCase());
+  if (!header.includes("date")) throw new Error("CSV pa kolonën 'date'.");
+  return rows.slice(1).map((cells) => {
+    const obj = {};
+    header.forEach((h, i) => { obj[h] = cells[i] ?? ""; });
+    return obj;
+  });
+}
+
+// Returns a clean record or null if the row is unusable.
+function normalizeRecord(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const date = String(raw.date ?? "").trim();
+  const side = String(raw.side ?? "").trim().toLowerCase();
+  const time = String(raw.time ?? "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || toDateStr(parseDateStr(date)) !== date) return null;
+  if (side !== "left" && side !== "right") return null;
+  return {
+    date,
+    time: /^([01]\d|2[0-3]):[0-5]\d$/.test(time) ? time : "00:00",
+    side,
+    notes: String(raw.notes ?? "").trim(),
+    updatedAt: Date.now(),
+  };
+}
+
+async function deliverFile(filename, mime, content) {
+  const file = new File([content], filename, { type: mime });
+  // iOS home-screen apps ignore <a download>, so prefer the share sheet when files are shareable.
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: filename });
+      return true;
+    } catch (err) {
+      if (err.name === "AbortError") return false;
+    }
+  }
+  const url = URL.createObjectURL(file);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return true;
+}
+
+async function exportData(format) {
+  closeDataMenu();
+  const records = await getAllInjections();
+  if (!records.length) return showToolbarMsg("Nuk ka të dhëna për eksport.", true);
+
+  const stamp = toDateStr(new Date());
+  const exported =
+    format === "json"
+      ? await deliverFile(`injections-${stamp}.json`, "application/json", JSON.stringify(records, null, 2))
+      : await deliverFile(`injections-${stamp}.csv`, "text/csv", "\uFEFF" + toCsv(records));
+  if (exported) showToolbarMsg(`U eksportuan ${records.length} regjistrime.`);
+}
+
+async function importFile(file) {
+  try {
+    const text = await file.text();
+    const isCsv = /\.csv$/i.test(file.name) || file.type === "text/csv";
+    let rawRows;
+    if (isCsv) {
+      rawRows = recordsFromCsv(text);
+    } else {
+      const parsed = JSON.parse(text);
+      rawRows = Array.isArray(parsed) ? parsed : parsed.injections;
+      if (!Array.isArray(rawRows)) throw new Error("JSON duhet të jetë një listë regjistrimesh.");
+    }
+
+    const records = rawRows.map(normalizeRecord).filter(Boolean);
+    const skipped = rawRows.length - records.length;
+    if (!records.length) throw new Error("Asnjë regjistrim i vlefshëm në skedar.");
+
+    // Single transaction: either everything is imported or nothing is.
+    const db = await openDatabase();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      records.forEach((r) => store.put(r)); // same date => overwritten
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+
+    allRecords = await getAllInjections();
+    isEditing = false;
+    render();
+    showToolbarMsg(
+      `U importuan ${records.length} regjistrime${skipped ? ` (${skipped} u anashkaluan)` : ""}.`
+    );
+  } catch (err) {
+    showToolbarMsg(`Importi dështoi: ${err.message}`, true);
+  }
+}
+
+importBtnEl.addEventListener("click", () => {
+  closeDataMenu();
+  importInputEl.click();
+});
+importInputEl.addEventListener("change", async () => {
+  const file = importInputEl.files[0];
+  importInputEl.value = ""; // allow re-importing the same file
+  if (file) await importFile(file);
+});
+
+menuBtnEl.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const open = dataMenuEl.classList.toggle("hidden") === false;
+  menuBtnEl.setAttribute("aria-expanded", String(open));
+});
+document.addEventListener("click", closeDataMenu);
+document.getElementById("exportJson").addEventListener("click", () => exportData("json"));
+document.getElementById("exportCsv").addEventListener("click", () => exportData("csv"));
+
 // ---- Init -------------------------------------------------------------------
 (async function init() {
   allRecords = await getAllInjections();

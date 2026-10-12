@@ -1,5 +1,5 @@
 // Minimal offline app-shell cache so the installed app opens without a network hit.
-const CACHE_NAME = "injection-tracker-v2";
+const CACHE_NAME = "injection-tracker-v3";
 const ASSETS = [
   "./index.html",
   "./index.css",

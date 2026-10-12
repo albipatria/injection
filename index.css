@@ -28,6 +28,79 @@ body {
   margin: 4px 0 20px;
 }
 
+.header {
+  position: relative;
+}
+
+.more-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.more-btn:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.menu-wrap {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 50;
+  min-width: 200px;
+  background: #fff;
+  border: 1px solid #e0e2e6;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  padding: 6px;
+}
+
+.menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 15px;
+  color: #1a1a1a;
+  cursor: pointer;
+}
+
+.menu button:hover {
+  background: #f3f4f6;
+}
+
+.toolbar-msg {
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #16a34a;
+}
+
+.toolbar-msg:empty {
+  display: none;
+}
+
+.toolbar-msg.error {
+  color: #b91c1c;
+}
+
 .date-card {
   background: #ffffff;
   border-radius: 18px;

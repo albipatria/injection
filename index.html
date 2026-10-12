@@ -19,6 +19,16 @@
     <header class="header">
       <h1>Injection Tracker</h1>
       <p class="subtitle">Gjurmo krahun ku behet injeksioni çdo ditë</p>
+      <div class="menu-wrap">
+        <button id="menuBtn" class="more-btn" aria-label="Importo / Eksporto" title="Importo / Eksporto" aria-haspopup="true" aria-expanded="false">&#8943;</button>
+        <div id="dataMenu" class="menu hidden" role="menu">
+          <button id="importBtn" role="menuitem">Importo (JSON / CSV)</button>
+          <button id="exportJson" role="menuitem">Eksporto si JSON</button>
+          <button id="exportCsv" role="menuitem">Eksporto si CSV</button>
+        </div>
+      </div>
+      <input type="file" id="importInput" accept=".json,.csv,application/json,text/csv" class="hidden" />
+      <p class="toolbar-msg" id="toolbarMsg" role="status"></p>
     </header>
 
     <div class="date-card">
